@@ -1,0 +1,88 @@
+import os
+import sys
+import uproot
+from pathlib import Path
+from apd import get_analysis_data
+from snakemake.remote.XRootD import RemoteProvider as XRootDRemoteProvider
+
+# Locate the python directory in the project and
+# add it to the PYTHONPATH
+pythondir = Path(workflow.basedir).parent / Path("python")
+resultsdir = Path(workflow.basedir).parent / Path("results")
+scriptsdir = Path(workflow.basedir).parent / Path("scripts")
+logsdir = Path(workflow.basedir).parent / Path("logs")
+sys.path.append(str(pythondir))
+
+# Loading the metadata for RDs Hadronic
+XRootD = XRootDRemoteProvider(stay_on_remote=True)
+XRootDLocal = XRootDRemoteProvider(stay_on_remote=False)
+
+def remote(filename):
+    if filename.startswith("root:"):
+        return XRootD.remote(filename)
+    else:
+        return filename
+
+def local(filename):
+    if filename.startswith("root:"):
+        return XRootDLocal.remote(filename)
+    else:
+        return filename
+
+def list_pfns(w):
+    """Query the APD dataset and return the XRoot remotes,
+    taking the snakemake wildcard object as input"""
+    pfns = []
+    if w.sign == "None":
+        pfns += dataset(datatype=w.datatype, eventtype=w.eventtype, polarity=w.polarity)
+    else:
+        pfns += dataset(
+            datatype=w.datatype, eventtype=w.eventtype, polarity=w.polarity, sign=w.sign
+        )
+    rootfiles = [XRootD.remote(f) for f in pfns]
+    return rootfiles
+
+
+def get_pfn_for_guid(w):
+    """Query the APD dataset and return the file with matching GUID,
+    taking the snakemake wildcard object as input"""
+    pfns = []
+    if w.sign == "None":
+        pfns += dataset(datatype=w.datatype, eventtype=w.eventtype, polarity=w.polarity)
+    else:
+        pfns += dataset(
+            datatype=w.datatype, eventtype=w.eventtype, polarity=w.polarity, sign=w.sign
+        )
+    rootfiles = [XRootD.remote(f) for f in pfns if get_guid(f) == w.guid]
+    return rootfiles
+
+
+def list_guids(w):
+    """Query the APD dataset and return the grid unique IDs (GUID),
+    taking the snakemake wildcard object as input"""
+    pfns = []
+    if w.sign == "None":
+        pfns += dataset(datatype=w.datatype, eventtype=w.eventtype, polarity=w.polarity)
+    else:
+        pfns += dataset(
+            datatype=w.datatype, eventtype=w.eventtype, polarity=w.polarity, sign=w.sign
+        )
+    guids = [get_guid(f) for f in pfns]
+    return guids
+
+
+# def get_guid(filename):
+#     ''' Use ROOT to get the guid of a file '''
+#     import ROOT
+#     rf = ROOT.TFile.Open(filename)
+#     return rf.GetUUID().AsString()
+
+from functools import lru_cache
+
+
+@lru_cache(maxsize=None)
+def get_guid(filename):
+    """Read the GUID for a root file.
+    As this is immutable, the value is cached to limit the I/O"""
+    with uproot.open(filename) as f:
+        return f.file.hex_uuid

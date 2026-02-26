@@ -1,0 +1,113 @@
+#
+# Workflow that processes the Hadronic R(Ds) analysis production and
+# and add the PID information using the pidgen2 package.
+# It then applies the R(Ds) hadronic BDts and filters the data.
+#
+
+from snakemake.utils import min_version
+
+min_version("6.0")
+
+include: "common/rds.snk"
+configfile: "config/config.json"
+
+# Looking up the temporary and target directory from the config
+tempdir = config["TEMP_DIR"]
+outdir = config["OUTPUT_DIR"]
+
+
+# Constants used to defined targets to be produced
+##################################################
+eventtypes = [ "90000000"]
+polarities = ["magup", "magdown"]
+datatypes = ["2012"]
+signs = ["ws", "rs"]
+
+
+# processing rules
+##############################################
+wildcard_constraints:
+    datatype="\d{4}",
+    eventtype="\d{8}",
+    polarity="(magup|magdown)",
+    sign="(ws|rs|None)",
+
+# Main rule that requires the final filtered
+# files with the BDT.
+##############################################
+prefix_list = [ "finalnoBYsep", "final", "finalBMsup5000"]
+def all_targets(w):
+        all_targets = [r(f) for f in
+            expand(f"{outdir}/rds_{{pref}}_2012_90000000_{{p}}_rs.root", 
+            pref = prefix_list,
+            p = polarities) ]
+        return all_targets
+
+rule all:
+    input:
+        all_targets
+
+
+# Apply the BDT and filter a specific file (with that initial file
+# and the PID information file generate in rules above).
+# --------------------------------------------------------------------------
+rule filter_file_noBYsep:
+    input:
+        scripts=[ "workflow/scripts/RDsProcess_data_noBYsep.C", "workflow/scripts/BsSignalCUT.h", 
+                "workflow/scripts/LEAF_BranchAddress.h", "workflow/scripts/LEAF_definition.h"],
+        pfn=get_pfn_for_guid,
+    output:
+        [
+            r(f"{outdir}/rds_filterednoBYsep_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root")
+        ],
+    log:
+        "logs/rds_filterednoBYsep_{datatype}_{eventtype}_{polarity}_{sign}_{guid}.log",
+    shell:
+        'cd workflow/scripts && root -q \'RDsProcess_data_noBYsep.C("{input.pfn}", "{output}")\' 2>&1 >../../{log}'
+
+
+# Merge filtered data into one single ntuple per dataset
+# --------------------------------------------------------------------------
+def merge_all_files(w):
+    return [
+        r(f"{outdir}/rds_filterednoBYsep_{w.datatype}_{w.eventtype}_{w.polarity}_{w.sign}_{g}.root")
+        for g in list_guids(w)
+    ]
+
+rule merge_all:
+    input:
+        filtered=merge_all_files,
+    output:
+        r(f"{outdir}/rds_finalnoBYsep_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    log:
+        "logs/rds_finalnoBYsep_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python workflow/scripts/merge_trees.py {output} {input} >{log} 2>&1"
+
+
+# Filter signal data by B_Y_SEP for fit
+# --------------------------------------------------------------------------
+rule filter_by_bysep:
+    input:
+        r(f"{outdir}/rds_finalnoBYsep_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    output:
+        r(f"{outdir}/rds_final_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    log:
+        "logs/rds_final_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python workflow/scripts/filter_by_BYSep.py {input} {output}>{log} 2>&1"
+
+
+
+# Filter data to check normalization peak
+# --------------------------------------------------------------------------
+rule filter_by_BMsup5000:
+    input:
+        r(f"{outdir}/rds_finalnoBYsep_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    output:
+        r(f"{outdir}/rds_finalBMsup5000_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    log:
+        "logs/rds_finalBMsup5000_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python workflow/scripts/filter_by_BMsup5000.py {input} {output}>{log} 2>&1"
+

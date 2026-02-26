@@ -1,0 +1,118 @@
+#
+# Workflow that processes the Hadronic R(Ds) analysis production and
+# and add the PID information using the pidgen2 package.
+# It then applies the R(Ds) hadronic BDts and filters the data.
+#
+
+from snakemake.utils import min_version
+
+min_version("6.0")
+
+
+include: "common/rds.snk"
+
+
+configfile: "config/config.json"
+
+
+# Looking up the temporary and target directory from the config
+outdir = config["OUTPUT_DIR"]
+datadir = config["DATA_DIR"]
+
+# Constants used to defined targets to be produced
+##################################################
+
+# eventtypes for which there is no right sign/wrong sign samples
+eventtypes = [ "13763200", "13266069", "13863401", "11266009"]
+
+# eventtypes corresponding to inclusive MC
+eventtypes_inclMC = [ "23903000", "23903003"]
+
+# signal MC
+eventtypes_signal = [ "13563002" ]
+
+# eventtypes for which we have right sign/wrong sign samples
+eventtypes_sign = eventtypes_inclMC + eventtypes_signal
+
+# other attributes of the dataset
+polarities = ["magup", "magdown"]
+datatypes = ["2012"]
+signs = ["ws", "rs"]
+
+# processing rules
+##############################################
+wildcard_constraints:
+    datatype="\d{4}",
+    eventtype="\d{8}",
+    polarity="(magup|magdown)",
+    sign="(ws|rs|None)",
+
+
+# Main rule that requires the final filtered
+# files with the BDT.
+##############################################
+rule all:
+    input:
+        [ local(f) for f in 
+            expand(
+                f"{outdir}/basic_report_{{d}}_{{e}}_{{p}}_None.pdf",
+                d=datatypes,
+                e=eventtypes,
+                p=polarities)],
+        [ local(f) for f in 
+            expand(
+                f"{outdir}/basic_report_{{d}}_{{e}}_{{p}}_{{s}}.pdf",
+                d=datatypes,
+                e=eventtypes_sign,
+                p=polarities,
+                s=signs)],
+        [ local(f) for f in 
+            expand(
+                f"{outdir}/categorization_report_{{d}}_{{e}}_{{p}}_{{s}}.pdf",
+                d=datatypes,
+                e=eventtypes_inclMC + eventtypes_signal,
+                p=polarities,
+                s=signs)],
+        [ local(f) for f in 
+            expand(
+                f"{outdir}/categorization_report_{{d}}_{{e}}_{{p}}_None.pdf",
+                d=datatypes,
+                e=eventtypes,
+                p=polarities)]
+
+
+# Produce the basic rport PDF
+# --------------------------------------------------------------------------
+rule basic_report:
+    input:
+        notebook="notebooks/ntuple_basic_report.ipynb",
+        data=remote(f"{datadir}/rds_categ_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    output:
+        intermediate=temp("Basic_report_{datatype}_{eventtype}_{polarity}_{sign}.ipynb"),
+        pdf=local(f"{outdir}/basic_report_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.pdf"),
+    log:
+        "logs/basic_report_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "papermill --prepare-only {input.notebook} {output.intermediate} "
+        "-y '{{\"datatype\": \"{wildcards.datatype}\", \"eventtype\":\"{wildcards.eventtype}\", "
+        "\"polarity\": \"{wildcards.polarity}\", \"sign\": \"{wildcards.sign}\"}}'"
+        " && jupyter nbconvert --to pdf  {output.intermediate} --output {output.pdf} "
+        "  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.enabled=True"
+
+rule categorization_report:
+    input:
+        notebook="notebooks/check_categorization.ipynb",
+        data=remote(f"{datadir}/rds_categ_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    output:
+        intermediate=temp("categorization_report_{datatype}_{eventtype}_{polarity}_{sign}.ipynb"),
+        pdf=local(f"{outdir}/categorization_report_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.pdf"),
+    log:
+        "logs/categorization_report_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "papermill --prepare-only {input.notebook} {output.intermediate} "
+        "-y '{{\"datatype\": \"{wildcards.datatype}\", \"eventtype\":\"{wildcards.eventtype}\", "
+        "\"polarity\": \"{wildcards.polarity}\", \"sign\": \"{wildcards.sign}\", "
+        "\"filename\": \"input.data\"}}'"
+        " && jupyter nbconvert --to pdf  {output.intermediate} --output {output.pdf} "
+        "  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.enabled=True"
+

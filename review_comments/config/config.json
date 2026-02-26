@@ -1,0 +1,5 @@
+{
+    "OUTPUT_DIR": "root://eoslhcb.cern.ch//eos/lhcb/wg/semileptonic/RDsHad/AP/final/train_bdt/output",
+    "AP_POST_PROCESS_DIR": "root://eoslhcb.cern.ch//eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/validated"
+}
+

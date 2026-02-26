@@ -1,0 +1,292 @@
+#
+# Workflow that processes the Hadronic R(Ds) analysis production and
+# and add the PID information using the pidgen2 package.
+# It then applies preliminary selection before BDT training
+#
+
+from snakemake.utils import min_version
+
+min_version("6.0")
+
+
+include: "common/rds.snk"
+
+configfile: "config/config.json"
+
+
+# Looking up the temporary and target directory from the config
+tempdir = os.path.abspath(config["TEMP_DIR"])
+cachedir = os.path.abspath(config["CACHE_DIR"])
+outdir = config["OUTPUT_DIR"]
+
+
+# Constants used to defined targets to be produced
+##################################################
+
+# eventtypes for which there is no right sign/wrong sign samples
+eventtypes = [ "13763200", "13266069", "13863401", "11266009" ]
+
+# Inclusive MC event types
+#eventtypes_inclMC = [ "23903003", "23903000",]
+eventtypes_inclMC = [ ]
+
+# Inclusive MC event types
+eventtypes_signal = [ "13563002", ]
+
+# eventtypes for which we have right sign/wrong sign samples
+eventtypes_sign = eventtypes_signal + eventtypes_inclMC
+
+# other attributes of the dataset
+polarities = ["magup", "magdown"]
+datatypes = ["2012"]
+signs = ["ws", "rs"]
+tracks = [f"p{i}_from{e}" for i in range(1, 4) for e in ["Xc", "Y"]]
+vars = ["PIDK", "PIDp", "pi_PIDK", "K_PIDK"]
+
+
+# Utility functions
+##############################################
+
+# There are two different types of columns
+pidgen_default_columns = [
+    f"p{i}_from{e}_PID{p}" for i in range(1, 4) for e in ["Xc", "Y"] for p in ["K", "p"]
+]
+
+pidgen_inclmc_columns = [
+    f"p{i}_fromXc_PID{p}" for i in range(1, 4) for p in ["K", "p"]
+] + [f"p{i}_fromY_{e}_PIDK" for i in range(1, 4) for e in ["pi", "K"]]
+
+
+def pidgen_type(eventtype):
+    """return the list of files names that will be created by the pidgen script"""
+    if eventtype in ["23903000", "23903003"]:
+        return ("inclmc", pidgen_inclmc_columns)
+    else:
+        return ("default", pidgen_default_columns)
+
+
+# processing rules
+##############################################
+wildcard_constraints:
+    datatype="\d{4}",
+    eventtype="\d{8}",
+    polarity="(magup|magdown)",
+    sign="(ws|rs|None)",
+    track=f"({'|'.join(tracks)})",
+    var=f"({'|'.join(vars)})",
+
+# Main rule
+##############################################
+def all_targets(w):
+
+    targets = []
+    targets += [ r(f) for f in 
+           expand(
+               f"{outdir}/rds_preprocess_mc_{{d}}_{{e}}_{{p}}_{{s}}.root",
+               d=datatypes,
+               e= eventtypes_signal,
+               p=polarities,
+               s=signs,
+           )] 
+    targets += [ r(f) for f in 
+           expand(
+               f"{outdir}/rds_preprocess_mc_{{d}}_{{e}}_{{p}}_{{s}}.root",
+               d=datatypes,
+               e=  eventtypes,
+               p=polarities,
+               s="None",
+           )]
+    targets += [ r(f) for f in 
+             expand(
+                 f"{outdir}/rds_background_lhcb_{{d}}_{{e}}_{{p}}_{{s}}.root",
+                 d="2012",
+                 e="90000000",
+                 p=polarities,
+                 s=signs,
+             )]
+
+    # targets += [ r(f) for f in 
+    #          expand(
+    #              f"{outdir}/rds_preprocess_lhcb_{{d}}_{{e}}_{{p}}_{{s}}.root",
+    #              d="2012",
+    #              e="90000000",
+    #              p=polarities,
+    #              s=signs,
+    #          )]
+    # targets += [ r(f) for f in 
+    #          expand(
+    #              f"{outdir}/rds_preprocessSample_lhcb_{{d}}_{{e}}_{{p}}_{{s}}.root",
+    #              d="2012",
+    #              e="90000000",
+    #              p=polarities,
+    #              s=signs,
+    #          )]
+    return targets
+
+rule all:
+   input:
+        all_targets
+
+# Run the PIDGen package
+# produces one file for each variable produced by the PIDGen package
+# for each input file
+# -------------------------------------------------------------------
+rule pidgen:
+    input:
+        get_pfn_for_guid,
+    output:
+        [
+            f"{tempdir}/pidgen_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}_{{track}}_{{var}}.root"
+        ],
+    log:
+        "logs/pidgen_{datatype}_{eventtype}_{polarity}_{sign}_{guid}_{track}_{var}.log",
+    shell:
+        "lb-conda pidgen/2025-05-09 python workflow/scripts/pidgen2_rds_hadronic.py {tempdir} {wildcards.datatype} {wildcards.eventtype} {wildcards.polarity} {wildcards.sign} {wildcards.track} {wildcards.var} {input} 2>&1 >{log}"
+
+
+# Gathers the branches with PID info into one single ROOT file
+# per input ROOT file (identified by its GUID).
+# This ROOT file can be used by making it a friend of the initial
+# ntuple
+# -------------------------------------------------------------------
+def merge_friends_input(w):
+    ptype, columns = pidgen_type(w.eventtype)
+    tmp = [
+        f"{tempdir}/pidgen_{w.datatype}_{w.eventtype}_{w.polarity}_{w.sign}_{w.guid}_{c}.root"
+        for c in columns
+    ]
+    return tmp
+
+
+rule merge_friends:
+    input:
+        merge_friends_input,
+    output:
+        r(f"{cachedir}/mergedpidgen_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root"),
+    log:
+        "logs/merge_friends_{datatype}_{eventtype}_{polarity}_{sign}_{guid}.log",
+    shell:
+        "workflow/scripts/merge_friends.py {output} {input} >{log} 2>&1"
+
+
+# Add Xc_selection and merge the data with the PIDGen info
+# --------------------------------------------------------------------------
+
+# the preprocess method has the following signature
+#  /**
+#  * Preprocess the data by applying selections and saving to a new file.
+#  * @param config DIRAC config, i.e. lhcb for data and mc for simulation
+#  * @param datafilename Input data file name.
+#  * @param eventtype Event type string to determine the preprocessing mode i.e. whether we apply Bs or Bd selections.
+#  * @param pidgenfilename File containing the regenerated PID columns.
+#  * @param outputfilename Output file name.
+#  * @param filter Flag to indicate whether to apply filtering. Default is false.
+#  */
+# void preprocess(const char* config, const char *datafilename, const char *eventtype, const char *pidgenfilename, const char *outputfilename, bool filter = false)
+
+# For this step we need to know which preprocessing we should apply, corresponding to the 
+# Bs or Bd samples, we therefore need to pass the eventtype to the script.
+rule preprocess_mc:
+    input:
+        pfn=get_pfn_for_guid,
+        pidinfo=r(f"{cachedir}/mergedpidgen_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root"),
+    output:
+        r(f"{cachedir}/preprocess_mc_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root"),
+    log:
+        "logs/preprocess_mc_{datatype}_{eventtype}_{polarity}_{sign}_{guid}.log",
+    shell:
+        'cd workflow/scripts &&  root -q \'preprocess.C("mc", "{input.pfn}", "{wildcards.eventtype}", "{input.pidinfo}", "{output}", true)\' 2>&1 >../../{log}'
+
+# For data we do not need to regenerate pidgen information
+rule preprocess_lhcb:
+    input:
+        pfn=get_pfn_for_guid,
+    output:
+        r(f"{cachedir}/preprocess_lhcb_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root"),
+    log:
+        "logs/preprocess_lhcb_{datatype}_{eventtype}_{polarity}_{sign}_{guid}.log",
+    shell:
+        'cd workflow/scripts &&  root -q \'preprocess.C("lhcb", "{input.pfn}", "{wildcards.eventtype}", "noPIDcorr", "{output}", true)\' 2>&1 >../../{log}'
+
+
+rule preprocessSample_lhcb:
+    input:
+        pfn=get_pfn_for_guid,
+    output:
+        r(f"{cachedir}/preprocessSample_lhcb_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root"),
+    log:
+        "logs/preprocessSample_lhcb_{datatype}_{eventtype}_{polarity}_{sign}_{guid}.log",
+    shell:
+        'cd workflow/scripts &&  root -q \'preprocess.C("lhcb", "{input.pfn}", "{wildcards.eventtype}", "noPIDcorr", "{output}", false)\' 2>&1 >../../{log}'
+
+
+# Merge filtered data into one single ntuple per dataset
+# --------------------------------------------------------------------------
+def merge_preprocess(w):
+    return [
+        r(f"{cachedir}/preprocess_{w.config}_{w.datatype}_{w.eventtype}_{w.polarity}_{w.sign}_{g}.root")
+        for g in list_guids(w)
+    ]
+
+rule merge_preprocess:
+    input:
+        filtered=merge_preprocess,
+    output:
+        r(f"{outdir}/rds_preprocess_{{config}}_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    log:
+        "logs/merge_preprocess_{config}_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python workflow/scripts/merge_trees.py {output} {input} >{log} 2>&1"
+
+
+
+# Merge filtered data into one single ntuple per dataset
+# --------------------------------------------------------------------------
+def merge_preprocessSample(w):
+    return [
+        r(f"{cachedir}/preprocessSample_{w.config}_{w.datatype}_{w.eventtype}_{w.polarity}_{w.sign}_{g}.root")
+        for g in list_guids(w)[0:3]
+    ]
+
+rule merge_preprocessSample:
+    input:
+        filtered=merge_preprocessSample,
+    output:
+        r(f"{outdir}/rds_preprocessSample_{{config}}_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    log:
+        "logs/merge_preprocessSample_{config}_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python workflow/scripts/merge_trees.py {output} {input} >{log} 2>&1"
+
+
+# Prerae background from LHCb data
+# This is used to train the BDTs for the PID selection
+# --------------------------------------------------------------------------
+
+# For data we do not need to regenerate pidgen information
+rule background_lhcb:
+    input:
+        pfn=get_pfn_for_guid,
+    output:
+        r(f"{cachedir}/background_lhcb_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root"),
+    log:
+        "logs/background_lhcb_{datatype}_{eventtype}_{polarity}_{sign}_{guid}.log",
+    shell:
+        'cd workflow/scripts &&  root -q \'preprocess.C("lhcb", "{input.pfn}", "{wildcards.eventtype}", "noPIDcorr", "{output}", true, true)\' 2>&1 >../../{log}'
+
+
+def merge_background(w):
+    return [
+        r(f"{cachedir}/background_{w.config}_{w.datatype}_{w.eventtype}_{w.polarity}_{w.sign}_{g}.root")
+        for g in list_guids(w)
+    ]
+
+rule merge_background:
+    input:
+        filtered=merge_background,
+    output:
+        r(f"{outdir}/rds_background_{{config}}_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    log:
+        "logs/merge_background_{config}_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python workflow/scripts/merge_trees.py {output} {input} >{log} 2>&1"

@@ -1,0 +1,138 @@
+from snakemake.utils import min_version
+
+min_version("6.0")
+
+
+include: "common/rds.snk"
+
+
+configfile: "config/config.json"
+configfile: "config/templates.yaml"
+
+
+# Looking up the temporary and target directory from the config
+datadir = config["RDSHAD_DIR"]
+bdtdir = config["BDT_DIR"]
+outdir = config["OUTPUT_DIR"]
+
+
+# Main rule that requires the final filtered
+# files with the BDT.
+##############################################
+
+
+rule all:
+    input:
+        remote(f"{outdir}/templates_group1/Templates_cut1.root"),
+        remote(f"{outdir}/templates_group1/Templates_cut2.root"),
+        remote(f"{outdir}/templates_group1/Templates_cut3.root"),
+        remote(f"{outdir}/templates_group1/category_fractions_cut1.json"),
+        remote(f"{outdir}/templates_group1/category_fractions_cut2.json"),
+        remote(f"{outdir}/templates_group1/category_fractions_cut3.json"),
+        remote(f"{outdir}/templates_group2/Templates_cut1.root"),
+        remote(f"{outdir}/templates_group2/category_fractions_cut1.json"),
+        remote(f"{outdir}/templates_group3/category_fractions_cut1.json"),
+        remote(f"{outdir}/templates_group3/category_fractions_cut2.json"),
+        remote(f"{outdir}/templates_group3/category_fractions_cut3.json"),
+        remote(f"{outdir}/templates_group3/Templates_cut1.root"),
+        remote(f"{outdir}/templates_group3/Templates_cut2.root"),
+        remote(f"{outdir}/templates_group3/Templates_cut3.root"),
+        
+def bdt_input_files(w):
+    return [
+        remote(
+            f"{datadir}/rds_categfiltered_2012_{eventtype}_{polarity}_rs_{str(category)}.root"
+        )
+        for eventtype in ["23903000", "23903003"]
+        for polarity in ["magup", "magdown"]
+        for category in [18, 19, 20]
+    ] + [
+        remote(f"{datadir}/rds_categ_2012_13563002_{polarity}_rs.root")
+        for polarity in ["magup", "magdown"]
+    ]
+
+
+rule get_bdt_200:
+    input:
+        remote(f"{bdtdir}/bdt_all_200.pkl"),
+    output:
+        "bdt_all_200.pkl",
+    shell:
+        "xrdcp {input} {output}"
+
+rule get_bdt_final:
+    input:
+        remote(f"{bdtdir}/bdtdblcharm_150_3_0.04.pkl"),
+    output:
+        "bdtdblcharm_150_3_0.04.pkl",
+    shell:
+        "xrdcp {input} {output}"
+
+
+rule export_histogram:
+    input:
+        script="workflow/scripts/export_histograms.py",
+        deps=("workflow/scripts/data.py", "workflow/scripts/bdt_all.py"),
+        data=bdt_input_files,
+        bdt="bdtdblcharm_150_3_0.04.pkl",
+    output:
+        report=remote(
+            f"{outdir}/templates_{{grouping}}/Template_{{cut}}_Cat{{categories}}.root"
+        ),
+    log:
+        "logs/{grouping}_Template{cut}Cat{categories}.log",
+    shell:
+        "python {input.script} {wildcards.grouping} {wildcards.cut} {wildcards.categories} {output} 2>&1 | tee {log}"
+
+
+def list_templates(grouping, cut):
+    """Create the list of targets expected, based on the configuration."""
+
+    def mkremote(cut, cats):
+        return remote(f"{outdir}/templates_{grouping}/Template_{cut}_Cat{cats}.root")
+
+    targets = []
+    for g in config["templates"][grouping]:
+        if isinstance(g, list):
+            targets.append(mkremote(cut, "_".join([str(i) for i in g])))
+        else:
+            targets.append(mkremote(cut, g))
+
+    return targets
+
+
+def list_templates_input(w):
+    return list_templates(w.grouping, w.cut)
+
+
+rule merge_templates:
+    input:
+        list_templates_input,
+    output:
+        remote(f"{outdir}/templates_{{grouping}}/Templates_{{cut}}.root"),
+    log:
+        "logs/Template_{grouping}_{cut}_merge.log",
+    shell:
+        "echo hadd -f {output} {input};"
+        "hadd -f {output} {input} 2>&1 | tee {log}"
+
+
+rule export_category_fractions:
+    input:
+        script="workflow/scripts/export_category_fractions.py",
+        deps=("workflow/scripts/data.py", "workflow/scripts/bdt_all.py"),
+        data=bdt_input_files,
+        bdt="bdtdblcharm_150_3_0.04.pkl",
+    output:
+        remote(f"{outdir}/templates_{{grouping}}/category_fractions_{{cut}}.json"),
+    log:
+        "logs/category_fractions_{grouping}_{cut}.log",
+    run:
+        localfile = remote_to_local(output)
+        shell(
+            f"echo python {{input.script}} {{wildcards.grouping}} {{wildcards.cut}} {localfile} 2>&1 | tee {{log}}"
+        )
+        shell(
+            f"python {{input.script}} {{wildcards.grouping}} {{wildcards.cut}} {localfile} 2>&1 | tee {{log}}"
+        )
+        shell(f"xrdcp -f {localfile} {{output}}")

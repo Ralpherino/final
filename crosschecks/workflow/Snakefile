@@ -1,0 +1,64 @@
+#
+# Workflow that processes the Hadronic R(Ds) analysis production and
+# and add the PID information using the pidgen2 package.
+# It then applies the R(Ds) hadronic BDts and filters the data.
+#
+
+from snakemake.utils import min_version
+
+min_version("6.0")
+
+
+include: "common/rds.snk"
+
+
+configfile: "config/config.json"
+
+
+# Looking up the temporary and target directory from the config
+outdir = config["OUTPUT_DIR"]
+datadir = config["DATA_DIR"]
+
+
+# processing rules
+##############################################
+wildcard_constraints:
+    datatype="\d{4}",
+    eventtype="\d{8}",
+    polarity="(magup|magdown)",
+    sign="(ws|rs|None)",
+
+
+# Main rule that triggers the rest
+##############################################
+rule all:
+    input:
+        local(f"{outdir}/Resolution_signal_MC_2012.pdf")
+     
+
+# Produce Resolution report
+# --------------------------------------------------------------------------
+rule Resolution_signal_MC_2012:
+    input:
+        notebook="notebooks/Resolution_signal_MC_2012.ipynb",
+        data=remote(f"{datadir}/rds_final_2012_13563002_magdown_rs.root"),
+    output:
+        pdf=local(f"{outdir}/Resolution_signal_MC_2012.pdf"),
+    log:
+        "logs/Resolution_signal_MC_2012.log",
+    shell:
+        "jupyter nbconvert --to pdf  {input.notebook} --output {output.pdf} "
+        "  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.enabled=True"
+
+
+rule Categorization_after_B_Y_SEP_cut:
+    input:
+        notebook="notebooks/Categorization_after_B_Y_SEP_cut.ipynb",
+        data=remote(f"{datadir}/rds_final_2012_13563002_magdown_rs.root"),
+    output:
+        pdf=local(f"{outdir}/Categorization_after_B_Y_SEP_cut.pdf"),
+    log:
+        "logs/Categorization_after_B_Y_SEP_cut.log",
+    shell:
+        "jupyter nbconvert --to pdf  {input.notebook} --output {output.pdf} "
+        "  --ExecutePreprocessor.kernel_name=python3 --ExecutePreprocessor.enabled=True"

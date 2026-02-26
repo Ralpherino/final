@@ -1,0 +1,268 @@
+#
+#
+#
+from snakemake.utils import min_version
+
+min_version("6.0")
+
+include: "common/rds.snk"
+
+configfile: "config/config.json"
+configfile: "config/templates.yaml"
+
+
+# Looking up the temporary and target directory from the config
+datadir = config["AP_POST_PROCESS_DIR"]
+outdir = config["OUTPUT_DIR"]
+
+#print(config["template_groups"])
+
+# Constants used to defined targets to be produced
+##################################################
+
+# eventtypes for which there is no right sign/wrong sign samples
+eventtypes = ["13763200", "13266069", "13863401", "11266009"]
+
+# eventtypes corresponding to inclusive MC
+eventtypes_inclMC = ["23903000", "23903003"]
+
+# signal MC
+eventtypes_signal = ["13563002"]
+
+# eventtypes for which we have right sign/wrong sign samples
+eventtypes_sign = eventtypes_inclMC + eventtypes_signal
+
+# other attributes of the dataset
+polarities = ["magup", "magdown"]
+datatypes = ["2012"]
+signs = ["ws", "rs"]
+
+
+# processing rules
+##############################################
+wildcard_constraints:
+    datatype="\d{4}",
+    eventtype="\d{8}",
+    polarity="(magup|magdown)",
+    sign="(ws|rs|None)",
+    category="\d{2}"
+
+
+# Main rule that requires the final filtered
+# files with the BDT.
+##############################################
+rule all:
+    input:
+        [
+        # local(f"{outdir}/Check_variables.pdf"),
+        # local(f"{outdir}/train-bdt.pdf"),
+        # local(f"{outdir}/train-bdt-kfold.pdf"), #ERROR
+        # local(f"{outdir}/training_report_18_60.pdf"),
+        # local(f"{outdir}/training_report_18_80.pdf"),
+        # local(f"{outdir}/training_report_18_100.pdf"),
+        # local(f"{outdir}/training_report_18_120.pdf"),
+        # local(f"{outdir}/training_report_18_150.pdf"),
+        # local(f"{outdir}/training_report_18_200.pdf"),
+        # local(f"{outdir}/training_report_19_200.pdf"),
+        # local(f"{outdir}/training_report_20_200.pdf"),
+        # local(f"{outdir}/training_report_all_200.pdf"),
+        # local(f"{outdir}/bdt_18_200.pkl"),
+        # local(f"{outdir}/bdt_19_200.pkl"),
+        # local(f"{outdir}/bdt_20_200.pkl"),
+        # local(f"{outdir}/bdt_all_200.pkl"),
+        # local(f"{outdir}/training_report_18_200.pdf"),
+        # local(f"{outdir}/training_report_19_200.pdf"),
+        # local(f"{outdir}/training_report_20_200.pdf"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat18.root"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat29.root"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat23.root"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat24.root"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat15_0_others.root"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat16_14.root"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat25_7_19_13.root"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat27_22.root"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat20.root"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat26.root"),
+        # remote(f"{outdir}/templates/Template_cut1_Cat21.root"),
+        # local(f"{outdir}/templates/category_fractions_cut1.json"),
+        # remote(f"{outdir}/templates/Templates_cut1.root"),
+        ##local(f"{outdir}/grid_search_all.pdf")
+        ## local(f"{outdir}/grid_search_18.pdf"),
+        ## local(f"{outdir}/grid_search_19.pdf"),
+        ## local(f"{outdir}/grid_search_20.pdf"),
+        local(f"{outdir}/categbdt_18_150.pkl"),
+        local(f"{outdir}/categbdt_19_150.pkl"),
+        local(f"{outdir}/categbdt_20_150.pkl"),
+        remote(f"{outdir}/bdtdblcharm_150_3_0.04.pkl")
+        ],
+        
+
+#10 different templates grouping the categories as follows: 
+#  [18],[29],[23],[15,0,others],[16,14],[25,7,19,13],[27,22],[20],[26],[21]
+
+def bdt_input_files(w):
+    return [
+        remote(f"{datadir}/rds_categfiltered_2012_{eventtype}_{polarity}_rs_{str(category)}.root")
+        for eventtype in ["23903000", "23903003"]
+        for polarity in polarities
+        for category in [18, 19, 20]
+    ] + [
+        remote(f"{datadir}/rds_categ_2012_13563002_{polarity}_rs.root")
+        for polarity in polarities
+    ]
+
+
+rule check_variables:
+    input:
+        notebook="notebooks/Check_variables.ipynb",
+        data=bdt_input_files
+    output:
+        pdf=local(f"{outdir}/Check_variables.pdf"),
+    log:
+        "logs/Check_variable.log",
+    shell:
+        "echo workflow/scripts/nbconvert.sh {input.notebook} {output.pdf}; "
+        "workflow/scripts/nbconvert.sh {input.notebook} {output.pdf} "
+    
+rule train_bdt:
+    input:
+        notebook="notebooks/train-bdt.ipynb",
+        data=bdt_input_files
+    output:
+        pdf=local(f"{outdir}/train-bdt.pdf"),
+    log:
+        "logs/train-bdt.log",
+    shell:
+        "workflow/scripts/nbconvert.sh {input.notebook} {output.pdf} "
+    
+rule train_bdt_kfold:
+    input:
+        notebook="notebooks/train-bdt-kfold.ipynb",
+        data=bdt_input_files
+    output:
+        pdf=local(f"{outdir}/train-bdt-kfold.pdf"),
+    log:
+        "logs/train-bdt-kfold.log",
+    shell:
+        "workflow/scripts/nbconvert.sh {input.notebook} {output.pdf} "
+    
+rule train_bdt_by_category_notebook:
+    input:
+        notebook="notebooks/train-bdt-by-category.ipynb",
+        data=bdt_input_files
+    output:
+        pdf=local(f"{outdir}/train-bdt-by-category.pdf"),
+    log:
+        "logs/train-bdt-by-category_notebook.log",
+    shell:
+        "workflow/scripts/nbconvert.sh {input.notebook} {output.pdf} "
+    
+rule train_bdt_by_category:
+    input:
+        script="workflow/scripts/train_bdt_by_category.py",
+        dep="workflow/scripts/data.py",
+        data=bdt_input_files
+    output:
+        report=local(f"{outdir}/training_report_{{category}}_{{nbest}}.pdf"),
+        model=local(f"{outdir}/categbdt_{{category}}_{{nbest}}.pkl"),
+    log:
+        "logs/train_bdt_by_category_{category}_{nbest}.log",
+    shell:
+        "echo {output};"
+        "python {input.script} --eventIndex 0 --nb-estimators {wildcards.nbest} {wildcards.category} {output.report} {output.model} 2>&1 | tee {log}"
+
+rule train_bdt_all:
+    input:
+        script="workflow/scripts/train_bdt_all.py",
+        dep1="workflow/scripts/data.py",
+        dep2="workflow/scripts/utils.py",
+        data=bdt_input_files
+    output:
+        report=local(f"{outdir}/training_report_all_{{nbest}}.pdf"),
+        model=local(f"{outdir}/bdt_all_{{nbest}}.pkl"),
+    log:
+        "logs/train_bdt_all_{nbest}.log",
+    shell:
+        "echo {output};"
+        "python {input.script} --eventIndex 0 --nb-estimators {wildcards.nbest} {output.report} {output.model} 2>&1 | tee {log}"
+
+rule train_bdtdblcharm:
+    input:
+        script="workflow/scripts/train_bdtdblcharm.py",
+        dep1="workflow/scripts/data.py",
+        dep2="workflow/scripts/utils.py",
+        data=bdt_input_files
+    output:
+        report=remote(f"{outdir}/training_report_bdtdblcharm_{{n_estimators}}_{{max_depth}}_{{eta}}.pdf"),
+        model=remote(f"{outdir}/bdtdblcharm_{{n_estimators}}_{{max_depth}}_{{eta}}.pkl"),
+    log:
+        "logs/train_bdtdblcharm_{n_estimators}_{max_depth}_{eta}.log",
+    shell:
+        "python {input.script} --nb-estimators {wildcards.n_estimators} --eta {wildcards.eta} --max-depth {wildcards.max_depth} training_report_bdtdblcharm_{wildcards.n_estimators}_{wildcards.max_depth}_{wildcards.eta}.pdf  bdtdblcharm_{wildcards.n_estimators}_{wildcards.max_depth}_{wildcards.eta}.pkl 2>&1 | tee {log};"
+        "xrdcp  training_report_bdtdblcharm_{wildcards.n_estimators}_{wildcards.max_depth}_{wildcards.eta}.pdf {output.report};"
+        "xrdcp  bdtdblcharm_{wildcards.n_estimators}_{wildcards.max_depth}_{wildcards.eta}.pkl {output.model};"
+
+rule train_bdt_grid_search:
+    input:
+        script="workflow/scripts/train_bdt_grid_search.py",
+        dep="workflow/scripts/data.py",
+        data=bdt_input_files
+    output:
+        report=local(f"{outdir}/grid_search_{{category}}.pdf"),
+    log:
+        "logs/grid_search_{category}.log",
+    shell:
+        "echo {output};"
+        "python {input.script} {wildcards.category} {output} 2>&1 | tee {log}"
+
+
+rule export_histogram:
+    input:
+        script="workflow/scripts/export_histograms.py",
+        deps=("workflow/scripts/data.py", "workflow/scripts/bdt_all.py"),
+        data=bdt_input_files,
+        bdt=local(f"{outdir}/bdt_all_200.pkl"),
+    output:
+        report=remote(f"{outdir}/templates/Template_{{cut}}_Cat{{categories}}.root"),
+    log:
+        "logs/Template{{cut}}Cat{{categories}}.log",
+    shell:
+        "python {input.script} {wildcards.cut} {wildcards.categories} {output} 2>&1 | tee {log}"
+
+
+def needed_templates(w):
+    groups = config['template_groups'][w.cut]
+    group_names = []
+    from collections.abc import Iterable
+    for group in groups:
+        if isinstance(group, Iterable):
+            group_names.append("_".join([str(c) for c in group]))
+        else:
+            group_names.append(str(group))
+    return [ remote(f"{outdir}/templates/Template_{{cut}}_Cat{g}.root") for g in group_names ]
+
+rule merge_templates:
+    input:
+        needed_templates
+    output:
+        remote(f"{outdir}/templates/Templates_{{cut}}.root"),
+    log:
+        "logs/Template_{cut}_merge.log",
+    shell:
+        "echo hadd -f {output} {input};"
+        "hadd -f {output} {input} 2>&1 | tee {log}"
+
+
+rule export_category_fractions:
+    input:
+        script="workflow/scripts/export_category_fractions.py",
+        deps=("workflow/scripts/data.py", "workflow/scripts/bdt_all.py"),
+        data=bdt_input_files,
+        bdt=local(f"{outdir}/bdt_all_200.pkl"),
+    output:
+        report=local(f"{outdir}/templates/category_fractions_{{cut}}.json"),
+    log:
+        "logs/category_fractions_{cut}.log",
+    shell:
+        "python {input.script} {wildcards.cut}  {output} 2>&1 | tee {log}"
+

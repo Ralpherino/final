@@ -1,0 +1,377 @@
+#
+# Workflow that processes the Hadronic R(Ds) analysis production and
+# and add the PID information using the pidgen2 package.
+# It then applies the R(Ds) hadronic BDts and filters the data.
+#
+
+from snakemake.utils import min_version
+
+min_version("6.0")
+
+
+include: "common/rds.snk"
+
+configfile: "config/config.json"
+
+
+# Looking up the temporary and target directory from the config
+tempdir = config["TEMP_DIR"]
+outdir = config["OUTPUT_DIR"]
+
+
+# Constants used to defined targets to be produced
+##################################################
+
+# eventtypes for which there is no right sign/wrong sign samples
+eventtypes = [ "13763200", "13266069", "13863401", "11266009"]
+
+# Inclusive MC event types
+eventtypes_inclMC = [ "23903003", "23903000",]
+
+# Inclusive MC event types
+eventtypes_signal = [ "13563002", ]
+
+# eventtypes for which we have right sign/wrong sign samples
+eventtypes_sign = eventtypes_signal + eventtypes_inclMC
+
+# other attributes of the dataset
+polarities = ["magup", "magdown"]
+datatypes = ["2012"]
+signs = ["ws", "rs"]
+tracks = [f"p{i}_from{e}" for i in range(1, 4) for e in ["Xc", "Y"]]
+vars = ["PIDK", "PIDp", "pi_PIDK", "K_PIDK"]
+
+
+# Utility functions
+##############################################
+
+# There are two different types of columns
+pidgen_default_columns = [
+    f"p{i}_from{e}_PID{p}" for i in range(1, 4) for e in ["Xc", "Y"] for p in ["K", "p"]
+]
+
+pidgen_inclmc_columns = [
+    f"p{i}_fromXc_PID{p}" for i in range(1, 4) for p in ["K", "p"]
+] + [f"p{i}_fromY_{e}_PIDK" for i in range(1, 4) for e in ["pi", "K"]]
+
+
+def pidgen_type(eventtype):
+    """return the list of files names that will be created by the pidgen script"""
+    if eventtype in ["23903000", "23903003"]:
+        return ("inclmc", pidgen_inclmc_columns)
+    else:
+        return ("default", pidgen_default_columns)
+
+
+# processing rules
+##############################################
+wildcard_constraints:
+    datatype="\d{4}",
+    eventtype="\d{8}",
+    polarity="(magup|magdown)",
+    sign="(ws|rs|None)",
+    track=f"({'|'.join(tracks)})",
+    var=f"({'|'.join(vars)})",
+
+# Main rule that requires the final filtered
+# files with the BDT.
+##############################################
+def all_targets(w):
+        all_targets = []
+        # Inclusive MC Filtered ntuple with categorization, one file per category
+        # The categorization is:
+        # "18": "Xc_signal_Ypis_displaced_fromBs_fromDs",
+        # "19": "Xc_signal_Ypis_displaced_fromB0_fromDp",
+        # "20": "Xc_signal_Ypis_displaced_fromBp_fromD0",
+        # "29": "Xc_signal_Ypis_displaced_fromBs_fromDs_fromTau",
+        all_targets += [ r(f) for f in 
+            expand(
+                f"{outdir}/rds_categfiltered_{{d}}_{{e}}_{{p}}_{{s}}_{{categs}}.root",
+                d=datatypes,
+                e=eventtypes_inclMC,
+                p=polarities,
+                s=signs,
+                categs=[18, 19, 20, 29]
+            )]
+        # Signal sample ntuple with categorization, one file per category
+        # "24": "Xc_signal_Ypis_displaced_fromBs_fromTau",
+        all_targets += [ r(f) for f in 
+            expand(
+                f"{outdir}/rds_categfiltered_{{d}}_{{e}}_{{p}}_{{s}}_{{categs}}.root",
+                d=datatypes,
+                e=eventtypes_signal,
+                p=polarities,
+                s=signs,
+                categs=[24]
+            )]
+        # ntuples with categorization and associated metadata
+        # for samples with RS/WS
+        all_targets += [ r(f) for f in 
+            expand(
+                f"{outdir}/rds_categ_{{d}}_{{e}}_{{p}}_{{s}}.root",
+                d=datatypes,
+                e=eventtypes_inclMC + eventtypes_signal,
+                p=polarities,
+                s=signs,
+            )]
+        all_targets += [ l(f) for f in 
+            expand(
+                f"{outdir}/rds_categ_metadata_{{d}}_{{e}}_{{p}}_{{s}}.json",
+                d=datatypes,
+                e=eventtypes_inclMC,
+                p=polarities,
+                s=signs,
+            )]
+        # ntuples with categorization and associated metadata
+        # for samples without sign        
+        all_targets += [ r(f) for f in 
+            expand(
+                f"{outdir}/rds_categ_{{d}}_{{e}}_{{p}}_None.root",
+                d=datatypes,
+                e=eventtypes,
+                p=polarities,
+            )]
+        all_targets += [ l(f) for f in 
+            expand(
+                f"{outdir}/rds_categ_metadata_{{d}}_{{e}}_{{p}}_None.json",
+                d=datatypes,
+                e=eventtypes,
+                p=polarities,
+            )]
+
+        # They are only needed to produce the other targets
+        # Filtered ntuples for event type without sign
+        all_targets += [ r(f) for f in 
+            expand(
+                f"{outdir}/rds_final_{{d}}_{{e}}_{{p}}_None.root",
+                d=datatypes,
+                e=eventtypes,
+                p=polarities)]
+        #Filtered ntuples for event type with RS/WS 
+        all_targets += [ r(f) for f in 
+            expand(
+                f"{outdir}/rds_final_{{d}}_{{e}}_{{p}}_{{s}}.root",
+                d=datatypes,
+                e=eventtypes_sign,
+                p=polarities,
+                s=signs,
+        )]
+        all_targets += [r(f) for f in
+            expand(f"{outdir}/rds_finalnoBYsep_2012_23903000_{{p}}_rs.root", p=polarities) ]
+        all_targets += [r(f) for f in
+            expand(f"{outdir}/rds_finalBMsup5000_2012_23903000_{{p}}_rs.root", p=polarities) ]
+
+        all_targets += [r(f) for f in
+            expand(f"{outdir}/rds_finalnoBYsep_2012_13266069_{{p}}_None.root", p=polarities) ]
+
+        return all_targets
+
+#rule signal:
+#    input:
+#        [ r(f) for f in 
+#            expand(
+#                f"{outdir}/rds_categfiltered_{{d}}_{{e}}_{{p}}_{{s}}_{{categs}}.root",
+#                d=[ "2012"],
+#                e=eventtypes_signal,
+#                p=[ "magdown" ],
+#                s=[ "rs" ],
+#                categs=[24]
+#            )]
+
+rule all:
+    input:
+        all_targets
+
+# Run the PIDGen package
+# produces one file for each variable produced by the PIDGen package
+# for each input file
+# -------------------------------------------------------------------
+rule pidgen:
+    input:
+        get_pfn_for_guid,
+    output:
+        [
+            f"{tempdir}/pidgen_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}_{{track}}_{{var}}.root"
+        ],
+    log:
+        "logs/pidgen_{datatype}_{eventtype}_{polarity}_{sign}_{guid}_{track}_{var}.log",
+    shell:
+        "lb-conda pidgen/2023-05-05 python workflow/scripts/pidgen2_rds_hadronic.py {tempdir} {wildcards.datatype} {wildcards.eventtype} {wildcards.polarity} {wildcards.sign} {wildcards.track} {wildcards.var} {input} 2>&1 >{log}"
+
+
+# Gathers the branches with PID info into one single ROOT file
+# per input ROOT file (identified by its GUID).
+# This ROOT file can be used by making it a friend of the initial
+# ntuple
+# -------------------------------------------------------------------
+def merge_friends_input(w):
+    ptype, columns = pidgen_type(w.eventtype)
+    tmp = [
+        f"{tempdir}/pidgen_{w.datatype}_{w.eventtype}_{w.polarity}_{w.sign}_{w.guid}_{c}.root"
+        for c in columns
+    ]
+    return tmp
+
+
+rule merge_friends:
+    input:
+        merge_friends_input,
+    output:
+        r(f"{outdir}/mergedpidgen_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root"),
+    log:
+        "logs/merge_friends_{datatype}_{eventtype}_{polarity}_{sign}_{guid}.log",
+    shell:
+        "workflow/scripts/merge_friends.py {output} {input} >{log} 2>&1"
+
+
+# Create a file with the configuration of the TChain needed to read the data
+# --------------------------------------------------------------------------
+def ntuple_config_input(w):
+    return [
+        r(f"{outdir}/mergedpidgen_{w.datatype}_{w.eventtype}_{w.polarity}_{w.sign}_{g}.root")
+        for g in list_guids(w)
+    ]
+
+
+rule ntuple_config:
+    input:
+        pidinfo=ntuple_config_input,
+        pfns=list_pfns,
+    output:
+        r(f"{outdir}/pidinfo_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.json"),
+    run:
+        data = {}
+        data["datatype"] = str(wildcards.datatype)
+        data["eventtype"] = str(wildcards.eventtype)
+        data["polarity"] = str(wildcards.polarity)
+        data["sign"] = str(wildcards.sign)
+        data["pfns"] = [str(s) for s in input.pfns]
+        data["guids"] = {str(p): get_guid(p) for p in input.pfns}
+        data["pidinfo"] = [str(s) for s in input.pidinfo]
+        import json
+
+        with open(str(output), "w") as f:
+            json.dump(data, f)
+
+
+# Apply the BDT and filter a specific file (with that initial file
+# and the PID information file generate in rules above).
+# --------------------------------------------------------------------------
+rule filter_file_noBYsep:
+    input:
+        scripts=[ "workflow/scripts/RDsProcess.C", "workflow/scripts/BsSignalCUT.h", 
+                "workflow/scripts/LEAF_BranchAddress.h", "workflow/scripts/LEAF_definition.h"],
+        pfn=get_pfn_for_guid,
+        pidinfo=r(f"{outdir}/mergedpidgen_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root"),
+    output:
+        [
+            r(f"{outdir}/rds_filterednoBYsep_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root")
+        ],
+    log:
+        "logs/rds_filterednoBYsep_{datatype}_{eventtype}_{polarity}_{sign}_{guid}.log",
+    shell:
+        'cd workflow/scripts && root -q \'RDsProcess_noBYsep.C("{input.pfn}", "{input.pidinfo}", "{output}", "{wildcards.eventtype}")\' 2>&1 >../../{log}'
+
+
+# Merge filtered data into one single ntuple per dataset
+# --------------------------------------------------------------------------
+def merge_all_input_noBYsep(w):
+    return [
+        r(f"{outdir}/rds_filterednoBYsep_{w.datatype}_{w.eventtype}_{w.polarity}_{w.sign}_{g}.root")
+        for g in list_guids(w)
+    ]
+
+
+rule merge_all_noBYsep:
+    input:
+        filtered=merge_all_input_noBYsep,
+    output:
+        r(f"{outdir}/rds_finalnoBYsep_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    log:
+        "logs/rds_finalnoBYsep_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python workflow/scripts/merge_trees.py {output} {input} >{log} 2>&1"
+
+
+
+# Apply the BDT and filter a specific file (with that initial file
+# and the PID information file generate in rules above).
+# --------------------------------------------------------------------------
+rule filter_file:
+    input:
+        scripts=[ "workflow/scripts/RDsProcess.C", "workflow/scripts/BsSignalCUT.h", 
+                "workflow/scripts/LEAF_BranchAddress.h", "workflow/scripts/LEAF_definition.h"],
+        pfn=get_pfn_for_guid,
+        pidinfo=r(f"{outdir}/mergedpidgen_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root"),
+    output:
+        [
+            r(f"{outdir}/rds_filtered_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{guid}}.root")
+        ],
+    log:
+        "logs/rds_filtered_{datatype}_{eventtype}_{polarity}_{sign}_{guid}.log",
+    shell:
+        'cd workflow/scripts && root -q \'RDsProcess.C("{input.pfn}", "{input.pidinfo}", "{output}", "{wildcards.eventtype}")\' 2>&1 >../../{log}'
+
+
+# Merge filtered data into one single ntuple per dataset
+# --------------------------------------------------------------------------
+def merge_all_input(w):
+    return [
+        r(f"{outdir}/rds_filtered_{w.datatype}_{w.eventtype}_{w.polarity}_{w.sign}_{g}.root")
+        for g in list_guids(w)
+    ]
+
+
+rule merge_all:
+    input:
+        filtered=merge_all_input,
+    output:
+        r(f"{outdir}/rds_final_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    log:
+        "logs/rds_final_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python workflow/scripts/merge_trees.py {output} {input} >{log} 2>&1"
+
+
+
+# Rule to classify the background categories in the Inclusive MC sample
+# --------------------------------------------------------------------------
+rule classify_background:
+    input:
+        script="workflow/scripts/add_categorization.py",
+        data=r(f"{outdir}/rds_final_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    output:
+        data=r(f"{outdir}/rds_categ_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+        metadata=l(f"{outdir}/rds_categ_metadata_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.json"),
+    log:
+        "logs/rds_categ_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python {input.script} {input.data} {output.data} {output.metadata} >{log} 2>&1"
+
+
+# Rule to classify the background categories in the Inclusive MC sample
+# --------------------------------------------------------------------------
+rule split_by_bkg_category:
+    input:
+        script="workflow/scripts/split_by_bkg_category.py",
+        data=r(f"{outdir}/rds_categ_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    output:
+        r(f"{outdir}/rds_categfiltered_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}_{{categ}}.root"),
+    log:
+        "logs/rds_categfiltered_{datatype}_{eventtype}_{polarity}_{sign}_{categ}.log",
+    shell:
+        "python workflow/scripts/split_by_bkg_category.py {input.data} {output} {wildcards.categ} >{log} 2>&1"
+
+
+# Filter data to check normalization peak
+# --------------------------------------------------------------------------
+rule filter_by_BMsup5000:
+    input:
+        r(f"{outdir}/rds_finalnoBYsep_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    output:
+        r(f"{outdir}/rds_finalBMsup5000_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    log:
+        "logs/rds_finalBMsup5000_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python workflow/scripts/filter_by_BMsup5000.py {input} {output}>{log} 2>&1"
+

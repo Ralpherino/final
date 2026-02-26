@@ -1,0 +1,63 @@
+from snakemake.utils import min_version
+
+min_version("6.0")
+
+include: "common/rds.snk"
+
+configfile: "config/config.json"
+
+# Looking up the temporary and target directory from the config
+datadir = config["RDSHAD_DIR"]
+bdtdir = config["BDT_DIR"]
+outdir = config["OUTPUT_DIR"]
+
+
+rule all:
+    input:
+        remote(f"{outdir}/rds_finalnoBYsepCateg_2012_23903000_magdown_rs.root"),
+        remote(f"{outdir}/rds_finalnoBYsepCateg_2012_23903000_magup_rs.root"),  
+        remote(f"{outdir}/rds_categdecays_14_2012_23903000_magup_rs.pkl"),
+        remote(f"{outdir}/rds_categdecays_15_2012_23903000_magup_rs.pkl"),
+        remote(f"{outdir}/rds_categdecays_17_2012_23903000_magup_rs.pkl"),
+        remote(f"{outdir}/rds_categdecays_14_2012_23903000_magdown_rs.pkl"),
+        remote(f"{outdir}/rds_categdecays_15_2012_23903000_magdown_rs.pkl"),
+        remote(f"{outdir}/rds_categdecays_17_2012_23903000_magdown_rs.pkl"),
+
+    # {'Xc_signal_Ypis_nomatch_doubleCharm': 7,
+    #  'Xc_signal_Ypis_diffVertex_doubleCharm_OneFromB': 14,
+    #  'Xc_signal_Ypis_diffVertex_doubleCharm_TwoFromB': 15}
+
+rule get_bdt_final:
+    input:
+        remote(f"{bdtdir}/bdtdblcharm_150_3_0.04.pkl"),
+    output:
+        "bdtdblcharm_150_3_0.04.pkl",
+    shell:
+        "xrdcp {input} {output}"
+
+
+rule filter:
+    input:
+        script="workflow/scripts/filter.py",
+        infile=remote(f"{datadir}/rds_finalnoBYsep_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+    output:
+        remote(f"{outdir}/rds_finalnoBYsepCateg_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root")
+    log:
+        "logs/rds_finalnoBYsepCateg_{datatype}_{eventtype}_{polarity}_{sign}.log",
+
+    shell:
+        "python {input.script} {input.infile} rds_finalnoBYsepCateg_{wildcards.datatype}_{wildcards.eventtype}_{wildcards.polarity}_{wildcards.sign}.root 2>&1 | tee {log};"
+        "xrdcp rds_finalnoBYsepCateg_{wildcards.datatype}_{wildcards.eventtype}_{wildcards.polarity}_{wildcards.sign}.root {output} 2>&1 | tee -a {log};"
+
+rule get_decay_chain:
+    input:
+        script="workflow/scripts/add_decay_info.py",
+        infile=remote(f"{outdir}/rds_finalnoBYsepCateg_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.root"),
+        bdt="bdtdblcharm_150_3_0.04.pkl",
+    output:
+        remote(f"{outdir}/rds_categdecays_{{categ}}_{{datatype}}_{{eventtype}}_{{polarity}}_{{sign}}.pkl")
+    log:
+        "logs/rds_categdecays_{categ}_{datatype}_{eventtype}_{polarity}_{sign}.log",
+    shell:
+        "python {input.script} {wildcards.categ} {input.infile} rds_categdecays_{wildcards.categ}_{wildcards.datatype}_{wildcards.eventtype}_{wildcards.polarity}_{wildcards.sign}.pkl 2>&1 | tee {log};"
+        "xrdcp rds_categdecays_{wildcards.categ}_{wildcards.datatype}_{wildcards.eventtype}_{wildcards.polarity}_{wildcards.sign}.pkl {output} 2>&1 | tee -a {log};"

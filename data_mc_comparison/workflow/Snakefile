@@ -1,0 +1,65 @@
+from snakemake.utils import min_version
+min_version("6.0")
+
+
+include: "common/rds.snk"
+configfile: "config/config.json"
+
+import data
+
+# Looking up the temporary and target directory from the config
+ap_post_process_data_dir = config["AP_POST_PROCESS_DATA_DIR"]
+bdtdir = config["BDT_DIR"]
+outdir = config["OUTPUT_DIR"]
+
+polarities = ["magup", "magdown"]
+
+rule all:
+    input:
+        "bdtdblcharm_150_3_0.04.pkl",
+        "rds_fitcandidates_2012_90000000_rs.pickle",
+        "rds_norm_2012_90000000_rs.pickle",
+        "rds_fitcandidates_2012_23903000_rs.pickle",
+        "rds_fitcandidates_2012_13563002_rs.pickle",
+        "rds_fitcandidates_2012_13763200_None.pickle",
+        "rds_norm_2012_23903000_rs.pickle",
+        "rds_norm_2012_13266069_None.pickle",
+
+rule get_bdt:
+    input:
+        remote(f"{bdtdir}/bdtdblcharm_150_3_0.04.pkl"),
+    output:
+        "bdtdblcharm_150_3_0.04.pkl",
+    shell:
+        "xrdcp {input} {output}"
+
+def cache_fitcandidates_input(w):
+    filenames = data.get_filenames(datatype=w.datatype, eventtype=w.eventtype, sign=w.sign)
+    print(filenames)
+    deps = [ remote(f) for f in filenames ] + [ "bdtdblcharm_150_3_0.04.pkl",  "python/data.py"]
+    return deps
+
+rule cache_fitcandidates:
+    input:
+        cache_fitcandidates_input
+    output:
+        "rds_fitcandidates_{datatype}_{eventtype}_{sign}.pickle"
+    run:
+        import data
+        print(f"Command: data.pickle_fitcandidates({output[0]}, {wildcards.datatype}, {wildcards.eventtype}, {wildcards.sign}")
+        data.pickle_fitcandidates(output[0], wildcards.datatype, wildcards.eventtype, wildcards.sign)
+
+
+def cache_normalization_input(w):
+    filenames = data.norm_filenames(datatype=w.datatype, eventtype=w.eventtype, sign=w.sign)
+    deps = [ remote(f) for f in filenames ] + [ "python/data.py"]
+    return deps
+
+rule cache_normalization:
+    input:
+        cache_normalization_input
+    output:
+        "rds_norm_{datatype}_{eventtype}_{sign}.pickle"
+    run:
+        import data
+        data.pickle_norm(output[0], wildcards.datatype, wildcards.eventtype, wildcards.sign)

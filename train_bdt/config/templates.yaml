@@ -1,0 +1,62 @@
+
+# This list contains the way the templates should be grouped 
+template_groups:
+  cut1:
+    - 18 #"Xc_signal_Ypis_displaced_fromBs_fromDs",
+    - 29 #"Xc_signal_Ypis_displaced_fromBs_fromDs_fromTau",
+    - 23 #"Xc_signal_Ypis_displaced_fromBp_fromDp",
+    - 24 # "Xc_signal_Ypis_displaced_fromBs_fromTau", SIGNAL
+    - 
+      - 15 # "Xc_signal_Ypis_diffVertex_doubleCharm_TwoFromB",
+      - 0 #"Xc_background",
+      - others
+    - 
+      - 16 #"Xc_signal_Ypis_diffVertex_CharmStrange", XXX check
+      - 14 #"Xc_signal_Ypis_diffVertex_doubleCharm_OneFromB",
+    - 
+      - 25 #"Xc_signal_Ypis_displaced_fromB0_fromD0",
+      - 7  #"Xc_signal_Ypis_nomatch_doubleCharm",
+      - 19 #"Xc_signal_Ypis_displaced_fromB0_fromDp",
+      - 13 # "Xc_signal_Ypis_diffVertex_doubleCharm",
+    - 
+      - 27 #"Xc_signal_Ypis_displaced_fromBs_fromD0",
+      - 22 #"Xc_signal_Ypis_displaced_fromBs_fromDp",
+    - 20 #"Xc_signal_Ypis_displaced_fromBp_fromD0",
+    - 26 # "Xc_signal_Ypis_displaced_fromB0_fromDs",
+    - 21 #"Xc_signal_Ypis_displaced_fromLambdab_fromLambdac",
+
+# All categories labelled as "others"
+others_template:
+  - 12
+  - 3
+  - 4
+  - 6
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 17
+  - 28
+  - 30
+  - 31
+  - 32
+  - 33
+  - 34
+  - 35
+  - 36
+  - 37
+  - 38
+  - 39
+  - 40
+  - 41
+  - 43
+  - 44
+  - 45
+  - 46
+  - 47
+  - 48
+  - -1
+  - 2
+  - 1
+  - 49

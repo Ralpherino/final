@@ -1,0 +1,41 @@
+from snakemake.utils import min_version
+min_version("6.0")
+
+include: "common/rds.snk"
+configfile: "config/config.json"
+configfile: "config/templates.yaml"
+
+# Looking up the temporary and target directory from the config
+ap_post_process_dir = config["AP_POST_PROCESS_DIR"]
+bdtdir = config["BDT_DIR"]
+outdir = config["OUTPUT_DIR"]
+
+polarities = ["magup", "magdown"]
+
+rule all:
+    input:
+        "bdtdblcharm_150_3_0.04.pkl",
+        "rds_fitcandidates_2012_23903000_ws.pickle",
+        "rds_fitcandidates_2012_23903000_rs.pickle"
+
+rule get_bdt:
+    input:
+        remote(f"{bdtdir}/bdtdblcharm_150_3_0.04.pkl"),
+    output:
+        "bdtdblcharm_150_3_0.04.pkl",
+    shell:
+        "xrdcp {input} {output}"
+
+def cache_input(w):
+    deps = [ remote(f"{ap_post_process_dir}/rds_final_{w.datatype}_{w.eventtype}_{p}_{w.sign}.root") 
+             for p in polarities ] + [ "bdtdblcharm_150_3_0.04.pkl",  "python/data.py"]
+    return deps
+
+rule cache_data:
+    input:
+        cache_input
+    output:
+        "rds_fitcandidates_{datatype}_{eventtype}_{sign}.pickle"
+    run:
+        import data
+        data.pickle_filtered_data(output[0], wildcards.datatype, wildcards.eventtype, wildcards.sign)

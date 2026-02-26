@@ -1,0 +1,81 @@
+
+# This list contains the way the templates should be grouped 
+templates:
+  group1:
+    - 18 #"Xc_signal_Ypis_displaced_fromBs_fromDs",
+    - 29 #"Xc_signal_Ypis_displaced_fromBs_fromDs_fromTau",
+    - 23 #"Xc_signal_Ypis_displaced_fromBp_fromDp",
+    - 
+      - 24 # "Xc_signal_Ypis_displaced_fromBs_fromTau", SIGNAL
+      - 10
+      - 11
+    - 
+      - 15 # "Xc_signal_Ypis_diffVertex_doubleCharm_TwoFromB",
+      - 0 #"Xc_background",
+      - others
+    - 
+      - 16 #"Xc_signal_Ypis_diffVertex_CharmStrange", XXX check
+      - 14 #"Xc_signal_Ypis_diffVertex_doubleCharm_OneFromB",
+    - 
+      - 25 #"Xc_signal_Ypis_displaced_fromB0_fromD0",
+      - 7  #"Xc_signal_Ypis_nomatch_doubleCharm",
+      - 19 #"Xc_signal_Ypis_displaced_fromB0_fromDp",
+      - 13 # "Xc_signal_Ypis_diffVertex_doubleCharm",
+    - 
+      - 27 #"Xc_signal_Ypis_displaced_fromBs_fromD0",
+      - 22 #"Xc_signal_Ypis_displaced_fromBs_fromDp",
+    - 20 #"Xc_signal_Ypis_displaced_fromBp_fromD0",
+    - 26 # "Xc_signal_Ypis_displaced_fromB0_fromDs",
+    - 21 #"Xc_signal_Ypis_displaced_fromLambdab_fromLambdac",
+  group2:
+    - 
+      - 18 #"Xc_signal_Ypis_displaced_fromBs_fromDs",
+      - 29 #"Xc_signal_Ypis_displaced_fromBs_fromDs_fromTau",
+      - 26 # "Xc_signal_Ypis_displaced_fromB0_fromDs",
+    - 
+      - 23 #"Xc_signal_Ypis_displaced_fromBp_fromDp",
+      - 19 #"Xc_signal_Ypis_displaced_fromB0_fromDp",
+      - 22 #"Xc_signal_Ypis_displaced_fromBs_fromDp",
+    - 24 # "Xc_signal_Ypis_displaced_fromBs_fromTau", SIGNAL
+    - 
+      - 15 # "Xc_signal_Ypis_diffVertex_doubleCharm_TwoFromB",
+      - 0 #"Xc_background",
+      - others
+      - 16 #"Xc_signal_Ypis_diffVertex_CharmStrange", XXX check
+      - 14 #"Xc_signal_Ypis_diffVertex_doubleCharm_OneFromB",
+      - 7  #"Xc_signal_Ypis_nomatch_doubleCharm",
+      - 13 # "Xc_signal_Ypis_diffVertex_doubleCharm",
+    - 
+      - 25 #"Xc_signal_Ypis_displaced_fromB0_fromD0",
+      - 27 #"Xc_signal_Ypis_displaced_fromBs_fromD0",
+      - 20 #"Xc_signal_Ypis_displaced_fromBp_fromD0",
+      
+    - 21 #"Xc_signal_Ypis_displaced_fromLambdab_fromLambdac",
+  group3:
+    - 
+      - 24
+      - 10
+      - 11
+    - 20
+    -
+      - 18
+      - 29
+    - 21
+    - 
+      - 25
+      - 13
+      - 19
+      - 7
+    -
+      - 16
+      - 14
+    - others
+    -
+      - 23
+      - 22
+      - 26
+      - 27
+    - 0
+    - 15
+
+ #[24, 20, [18, 29], 21, ['25', '13', '19', '7'], [16, 14,], 'others', [23, 22, 26, 27], 0, [15]]

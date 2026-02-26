@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<MethodSetup Method="Fisher::Fisher">
+  <GeneralInfo>
+    <Info name="TMVA Release" value="4.2.1 [262657]"/>
+    <Info name="ROOT Release" value="6.22/02 [398850]"/>
+    <Info name="Creator" value="cgiuglia"/>
+    <Info name="Date" value="Mon Nov 30 09:39:40 2020"/>
+    <Info name="Host" value="Linux buildvm-x86-16.iad2.fedoraproject.org 5.7.11-200.fc32.x86_64 #1 SMP Wed Jul 29 17:15:52 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux"/>
+    <Info name="Dir" value="/eos/lhcb/user/c/cgiuglia/DsDsst"/>
+    <Info name="Training events" value="25059"/>
+    <Info name="TrainingTime" value="3.96990776e-03"/>
+    <Info name="AnalysisType" value="Classification"/>
+  </GeneralInfo>
+  <Options>
+    <Option name="V" modified="Yes">False</Option>
+    <Option name="VerbosityLevel" modified="No">Default</Option>
+    <Option name="VarTransform" modified="Yes">None</Option>
+    <Option name="H" modified="Yes">True</Option>
+    <Option name="CreateMVAPdfs" modified="Yes">True</Option>
+    <Option name="IgnoreNegWeightsInTraining" modified="No">False</Option>
+    <Option name="Method" modified="Yes">Fisher</Option>
+  </Options>
+  <Variables NVar="1">
+    <Variable VarIndex="0" Expression="Xc_pT_Breco_Yreco" Label="Xc_pT_Breco_Yreco" Title="Xc_pT_Breco_Yreco" Unit="MeV/c" Internal="Xc_pT_Breco_Yreco" Type="F" Min="4.39551506e+01" Max="1.03927607e+04"/>
+  </Variables>
+  <Spectators NSpec="3">
+    <Spectator SpecIndex="0" Expression="B_MM" Label="B_MM" Title="B_MM 1" Unit="MeV/c^2" Internal="B_MM" Type="F" Min="2.79345703e+03" Max="5.32833984e+03"/>
+    <Spectator SpecIndex="1" Expression="Xc_MM" Label="Xc_MM" Title="Xc_MM 2" Unit="MeV/c^2" Internal="Xc_MM" Type="F" Min="1.94800403e+03" Max="1.98799597e+03"/>
+    <Spectator SpecIndex="2" Expression="Xc_0.20_nc_mult" Label="Xc_0.20_nc_mult" Title="Xc_0.20_nc_mult" Unit="" Internal="Xc_0.20_nc_mult" Type="F" Min="0.00000000e+00" Max="0.00000000e+00"/>
+  </Spectators>
+  <Classes NClass="2">
+    <Class Name="Signal" Index="0"/>
+    <Class Name="Background" Index="1"/>
+  </Classes>
+  <Transformations NTransformations="0"/>
+  <MVAPdfs>
+    <PDF Name="Fisher_PDFSig" MinNSmooth="10" MaxNSmooth="10" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+      <Histogram Name="Fisher_tr_S_original" NBins="50" XMin="-2.6631423830986023e-01" XMax="2.4939208030700684e+00" HasEquidistantBins="1">
+        1.89571479e-01 7.62039805e-01 1.65358884e+00 2.24482662e+00 2.90738832e+00 3.32970102e+00 3.34283964e+00 2.46442922e+00 9.02810705e-01 1.72678971e-01 5.63083600e-02 2.44002893e-02 1.31386173e-02 1.31386173e-02 1.87694533e-03 5.63083600e-03 5.63083600e-03 3.75389067e-03 1.87694533e-03 1.87694533e-03 0.00000000e+00 7.50778133e-03 0.00000000e+00 1.87694533e-03 1.87694533e-03 1.87694533e-03 0.00000000e+00 1.87694533e-03 1.87694533e-03 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 
+      </Histogram>
+    </PDF>
+    <PDF Name="Fisher_PDFBkg" MinNSmooth="10" MaxNSmooth="10" InterpolMethod="2" KDE_type="1" KDE_iter="1" KDE_border="1" KDE_finefactor="1.0000000000000000e+00">
+      <Histogram Name="Fisher_tr_B_original" NBins="50" XMin="-2.6631423830986023e-01" XMax="2.4939208030700684e+00" HasEquidistantBins="1">
+        4.38545530e-01 1.72714044e+00 2.63950326e+00 3.26381338e+00 3.43664500e+00 3.13448360e+00 2.14099574e+00 9.32350148e-01 2.42199408e-01 5.87862641e-02 2.46902309e-02 1.76358792e-02 7.05435169e-03 7.05435169e-03 7.05435169e-03 5.87862641e-03 7.05435169e-03 2.35145056e-03 1.17572528e-03 1.17572528e-03 0.00000000e+00 4.70290112e-03 4.70290112e-03 2.35145056e-03 0.00000000e+00 0.00000000e+00 1.17572528e-03 3.52717584e-03 0.00000000e+00 0.00000000e+00 1.17572528e-03 0.00000000e+00 0.00000000e+00 1.17572528e-03 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00 
+      </Histogram>
+    </PDF>
+  </MVAPdfs>
+  <Weights NCoeff="2">
+    <Coefficient Index="0" Value="-2.7803796306044765e-01"/>
+    <Coefficient Index="1" Value="2.6672016734300558e-04"/>
+  </Weights>
+</MethodSetup>
