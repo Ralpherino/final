@@ -48,9 +48,9 @@ void BsSignalCUT::Loop()
 
    Long64_t nentries = fChain->GetEntriesFast();
 
-   TString weightFile_BDT_3pi   = "TMVA/TMVAClassification_BDT_3pi_new_PID.weights.xml";
-   TString weightFile_BDT_Ds   = "TMVA/TMVAClassification_BDT_Ds_new_PID.weights.xml";
-   TString weightFile_BDT_Bs = "TMVA/TMVAClassification_BDT_Bs_new_PID.weights.xml";
+   TString weightFile_BDT_3pi   = "/afs/cern.ch/work/r/relhage/private/work/R_Ds/BDT/BDT_v2/dataset/weights/TMVAClassification_3pi_BDT.weights.xml";
+   TString weightFile_BDT_Ds   = "/afs/cern.ch/work/r/relhage/private/work/R_Ds/BDT/BDT_v2/dataset/weights/TMVAClassification_Ds_BDT.weights.xml";
+   TString weightFile_BDT_Bs = "/afs/cern.ch/work/r/relhage/private/work/R_Ds/BDT/BDT_v2/dataset/weights/TMVAClassification_Bs_BDT.weights.xml";
 
    // IsoGeneric charged track
    TString weightFile_BDTIso = "TMVA/TMVAClassification_test_BDT_prova1bis_plusBDTBs_KEY.weights.xml";
