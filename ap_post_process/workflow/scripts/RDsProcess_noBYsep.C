@@ -48,9 +48,9 @@ void BsSignalCUT::Loop()
 
    Long64_t nentries = fChain->GetEntriesFast();
 
-   TString weightFile_BDT_3pi   = "TMVA/TMVAClassification_BDT_3pi_new_PID.weights.xml";
-   TString weightFile_BDT_Ds   = "TMVA/TMVAClassification_BDT_Ds_new_PID.weights.xml";
-   TString weightFile_BDT_Bs = "TMVA/TMVAClassification_BDT_Bs_new_PID.weights.xml";
+   TString weightFile_BDT_3pi   = "TMVA/TMVAClassification_3pi_BDT.weights.xml";
+   TString weightFile_BDT_Ds   = "TMVA/TMVAClassification_Ds_BDT.weights.xml";
+   TString weightFile_BDT_Bs = "TMVA/TMVAClassification_Bs_BDT.weights.xml";
 
    // IsoGeneric charged track
    TString weightFile_BDTIso = "TMVA/TMVAClassification_test_BDT_prova1bis_plusBDTBs_KEY.weights.xml";
@@ -114,9 +114,9 @@ void BsSignalCUT::Loop()
    reader_Ds->AddVariable( "log(p1_fromXc_PT)",  &var_Ds[8]);
    reader_Ds->AddVariable( "log(p2_fromXc_PT)",  &var_Ds[9]);
    reader_Ds->AddVariable( "log(p3_fromXc_PT)",  &var_Ds[10]);
-   reader_Ds->AddVariable( "log(p1_fromXc_TRACK_GhostProbability)",  &var_Ds[11]);
-   reader_Ds->AddVariable( "log(p2_fromXc_TRACK_GhostProbability)",  &var_Ds[12]);
-   reader_Ds->AddVariable( "log(p3_fromXc_TRACK_GhostProbability)",  &var_Ds[13]);
+   reader_Ds->AddVariable( "log(p1_fromXc_TRACK_GhostProb)",  &var_Ds[11]);
+   reader_Ds->AddVariable( "log(p2_fromXc_TRACK_GhostProb)",  &var_Ds[12]);
+   reader_Ds->AddVariable( "log(p3_fromXc_TRACK_GhostProb)",  &var_Ds[13]);
    
    Float_t spec_Ds[2];   
    reader_Ds->AddSpectator( "B_MM",  &spec_Ds[0]);
@@ -135,9 +135,9 @@ void BsSignalCUT::Loop()
    reader_3pi->AddVariable( "log(p2_fromY_IPCHI2_OWNPV)",  &var_3pi[4]);
    reader_3pi->AddVariable( "log(p3_fromY_IPCHI2_OWNPV)",  &var_3pi[5]);    
 
-   reader_3pi->AddVariable( "log(p1_fromY_TRACK_GhostProbability)",  &var_3pi[6]);
-   reader_3pi->AddVariable( "log(p2_fromY_TRACK_GhostProbability)",  &var_3pi[7]);
-   reader_3pi->AddVariable( "log(p3_fromY_TRACK_GhostProbability)",  &var_3pi[8]);    
+   reader_3pi->AddVariable( "log(p1_fromY_TRACK_GhostProb)",  &var_3pi[6]);
+   reader_3pi->AddVariable( "log(p2_fromY_TRACK_GhostProb)",  &var_3pi[7]);
+   reader_3pi->AddVariable( "log(p3_fromY_TRACK_GhostProb)",  &var_3pi[8]);    
    
    reader_3pi->AddVariable( "Y_DOCA1",                &var_3pi[9]);
    reader_3pi->AddVariable( "Y_DOCA2",                &var_3pi[10]);
@@ -158,6 +158,11 @@ void BsSignalCUT::Loop()
    reader_Bs->AddVariable( "BDT_3pi",   &var_Bs[2]);   //&BDT_3pi_R);
    reader_Bs->AddVariable( "BDT_Ds",&var_Bs[3]);   //&Xc_PT_R);
    ////////reader_Bs->AddVariable( "log(Xc_PT)",&var_Bs[3]);   //&Xc_PT_R);
+   
+   Float_t spec_Bs[2];
+   reader_Bs->AddSpectator("B_MM",  &spec_Bs[0]);
+   reader_Bs->AddSpectator("Xc_MM", &spec_Bs[1]);
+   
    reader_Bs->BookMVA("BDT method",weightFile_BDT_Bs);
    
   
@@ -431,10 +436,13 @@ void BsSignalCUT::Loop()
         var_Bs[2] = (Float_t)BDT_3pi;
         var_Bs[3] = (Float_t)BDT_Ds;
 
+        spec_Bs[0] = (Float_t)B_MM;
+        spec_Bs[1] = (Float_t)Xc_MM;
+
         BDT_Bs  = reader_Bs->EvaluateMVA("BDT method");
       }
 #ifdef BDTcut
-      if( !(BDT_Ds > -0.0876 && BDT_3pi>-0.0727 && BDT_Bs > -0.0655 ) ) continue;
+      if( !(BDT_Ds > -0.058858 && BDT_3pi>-0.039645 && BDT_Bs > -0.049076 ) ) continue;
 #endif
 
 
@@ -940,4 +948,3 @@ void RDsProcess_noBYsep(TString ntuple_filename, TString pidinfo_filename, TStri
     BsSignalCUT c{ntuple_filename, pidinfo_filename, output_filename, inclMCmode, 10000.0, BDT_Iso_cut};
     c.Loop();
 }
-
