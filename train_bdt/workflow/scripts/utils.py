@@ -91,7 +91,7 @@ def train_classifier(Xtrain_scaled, ytrain, Xtest_scaled, ytest, nb_estimators, 
     print(f"Ratio bkg=/sign is {ratio}")
     model = xgb.XGBClassifier(
         eval_metric="logloss",
-        tree_method="gpu_hist", 
+        tree_method="hist", 
         random_state=42,
         gamma=gamma,
         n_estimators=nb_estimators,
