@@ -1,5 +1,5 @@
 {
     "TEMP_DIR": "./eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache",
-    "OUTPUT_DIR": "root://eoslhcb.cern.ch//eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/output"
+    "OUTPUT_DIR": "root://eoslhcb.cern.ch//eos/lhcb/user/r/relhage/test/rds/Ben/ap_post_process/output"
 }
 
