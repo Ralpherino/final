@@ -35,7 +35,7 @@ def mc_files(eventtype, sign="rs"):
 def load_signal_rdf():
     rdf_signal = ROOT.RDataFrame("DecayTree",  mc_files("13563002"))
     # Extra cuts on signal, identical to the ones applied by Carmen
-    rdf_signal = rdf_signal.Filter("(BDT_3pi>(-0.0727) && BDT_Ds>(-0.0876) && BDT_Bs>(-0.0655) && (Xc_Selection>0) && (Xc_BKGCAT== 0 ) &&  Y_BKGCAT==50 && B_BKGCAT==50 && a\
+    rdf_signal = rdf_signal.Filter("(BDT_3pi>(-0.039645) && BDT_Ds>(-0.058848) && BDT_Bs>(-0.049076) && (Xc_Selection>0) && (Xc_BKGCAT== 0 ) &&  Y_BKGCAT==50 && B_BKGCAT==50 && a\
 bs(p1_fromXc_TRUEID)==321 && abs(p2_fromXc_TRUEID)==321 && abs(p3_fromXc_TRUEID)==211 && abs(p1_fromY_TRUEID)+abs(p2_fromY_TRUEID)+abs(p3_from\
 Y_TRUEID)==3*211 )")
     rdf_signal = rdf_signal.Filter("B_Y_SEP<-4.5 && BDT_Iso>0.03458 & q2_2>0 && abs(mN2v)<250e6")
@@ -48,7 +48,7 @@ def load_category_rdf(category, inclmc_type):
 def load_signal_from_inclMC_rdf():
     rdf = ROOT.RDataFrame("DecayTree",  mc_files("23903000"))
     rdf = rdf.Filter("category==24")
-    rdf = rdf.Filter("(BDT_3pi>(-0.0727) && BDT_Ds>(-0.0876) && BDT_Bs>(-0.0655) && (Xc_Selection>0) && (Xc_BKGCAT== 0 ) &&  Y_BKGCAT==50 && B_BKGCAT==50 && abs(p1_fromXc_TRUEID)==321 && abs(p2_fromXc_TRUEID)==321 && abs(p3_fromXc_TRUEID)==211 && abs(p1_fromY_TRUEID)+abs(p2_fromY_TRUEID)+abs(p3_fromY_TRUEID)==3*211 )")
+    rdf = rdf.Filter("(BDT_3pi>(-0.039645) && BDT_Ds>(-0.058848) && BDT_Bs>(-0.049076) && (Xc_Selection>0) && (Xc_BKGCAT== 0 ) &&  Y_BKGCAT==50 && B_BKGCAT==50 && abs(p1_fromXc_TRUEID)==321 && abs(p2_fromXc_TRUEID)==321 && abs(p3_fromXc_TRUEID)==211 && abs(p1_fromY_TRUEID)+abs(p2_fromY_TRUEID)+abs(p3_fromY_TRUEID)==3*211 )")
     rdf = rdf.Filter("B_Y_SEP<-4.5 && BDT_Iso>0.03458 & q2_2>0 && abs(mN2v)<250e6")
     return rdf
 

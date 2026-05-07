@@ -1,0 +1,26 @@
+Checking if template exists in the storage
+Template configuration hash : 0d73d8705b40bae68b7db6dd66f00113b672f376
+Read template from root://eoslhcb.cern.ch//eos/lhcb/wg/PID/...d8705b40bae68b7db6dd66f00113b672f376/
+Applying Gaussian smearing with kernel [2.0, 2.0, 4.0, 4.0]
+Smeared template ready, starting resampling
+Resampling chunk 1/3, index=0/118554
+Resampling chunk 2/3, index=50000/118554
+Resampling chunk 3/3, index=100000/118554
+Random sampling of raw template with seed 1
+Applying Gaussian smearing with kernel [2.0, 2.0, 4.0, 4.0]
+Smeared template ready, starting resampling
+Resampling chunk 1/3, index=0/118554
+Resampling chunk 2/3, index=50000/118554
+Resampling chunk 3/3, index=100000/118554
+Random sampling of raw template with seed 2
+Applying Gaussian smearing with kernel [2.0, 2.0, 4.0, 4.0]
+Smeared template ready, starting resampling
+Resampling chunk 1/3, index=0/118554
+Resampling chunk 2/3, index=50000/118554
+Resampling chunk 3/3, index=100000/118554
+Random sampling of raw template with seed 3
+Applying Gaussian smearing with kernel [2.0, 2.0, 4.0, 4.0]
+Smeared template ready, starting resampling
+Resampling chunk 1/3, index=0/118554
+Resampling chunk 2/3, index=50000/118554
+Resampling chunk 3/3, index=100000/118554

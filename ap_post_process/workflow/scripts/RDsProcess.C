@@ -434,7 +434,7 @@ void BsSignalCUT::Loop()
         BDT_Bs  = reader_Bs->EvaluateMVA("BDT method");
       }
 #ifdef BDTcut
-      if( !(BDT_Ds > -0.0876 && BDT_3pi>-0.0727 && BDT_Bs > -0.0655 ) ) continue;
+      if( !(BDT_Ds > -0.058848 && BDT_3pi > -0.039645 && BDT_Bs > -0.049076 ) ) continue;
 #endif
 
 

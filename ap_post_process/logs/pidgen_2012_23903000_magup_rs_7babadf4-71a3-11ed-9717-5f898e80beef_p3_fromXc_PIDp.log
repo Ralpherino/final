@@ -1,0 +1,34 @@
+Checking if template exists in the storage
+Template configuration hash : 0d3971cbd9e18b135933998b4b2db1357289b548
+Read template from root://eoslhcb.cern.ch//eos/lhcb/wg/PID/...71cbd9e18b135933998b4b2db1357289b548/
+Applying Gaussian smearing with kernel [2.0, 2.0, 4.0, 4.0]
+Smeared template ready, starting resampling
+Resampling chunk 1/5, index=0/224014
+Resampling chunk 2/5, index=50000/224014
+Resampling chunk 3/5, index=100000/224014
+Resampling chunk 4/5, index=150000/224014
+Resampling chunk 5/5, index=200000/224014
+Random sampling of raw template with seed 1
+Applying Gaussian smearing with kernel [2.0, 2.0, 4.0, 4.0]
+Smeared template ready, starting resampling
+Resampling chunk 1/5, index=0/224014
+Resampling chunk 2/5, index=50000/224014
+Resampling chunk 3/5, index=100000/224014
+Resampling chunk 4/5, index=150000/224014
+Resampling chunk 5/5, index=200000/224014
+Random sampling of raw template with seed 2
+Applying Gaussian smearing with kernel [2.0, 2.0, 4.0, 4.0]
+Smeared template ready, starting resampling
+Resampling chunk 1/5, index=0/224014
+Resampling chunk 2/5, index=50000/224014
+Resampling chunk 3/5, index=100000/224014
+Resampling chunk 4/5, index=150000/224014
+Resampling chunk 5/5, index=200000/224014
+Random sampling of raw template with seed 3
+Applying Gaussian smearing with kernel [2.0, 2.0, 4.0, 4.0]
+Smeared template ready, starting resampling
+Resampling chunk 1/5, index=0/224014
+Resampling chunk 2/5, index=50000/224014
+Resampling chunk 3/5, index=100000/224014
+Resampling chunk 4/5, index=150000/224014
+Resampling chunk 5/5, index=200000/224014

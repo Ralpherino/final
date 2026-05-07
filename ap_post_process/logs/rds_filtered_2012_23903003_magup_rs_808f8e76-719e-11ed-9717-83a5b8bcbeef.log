@@ -1,0 +1,38 @@
+   ------------------------------------------------------------------
+  | Welcome to ROOT 6.28/00                        https://root.cern |
+  | (c) 1995-2022, The ROOT Team; conception: R. Brun, F. Rademakers |
+  | Built for linuxx8664gcc on Mar 21 2023, 07:31:00                 |
+  | From tag , 3 February 2023                                       |
+  | With                                                             |
+  | Try '.help'/'.?', '.demo', '.license', '.credits', '.quit'/'.q'  |
+   ------------------------------------------------------------------
+
+
+Processing RDsProcess.C("root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/anaprod/lhcb/MC/2012/INCLBDSHCX.ROOT/00172454/0000/00172454_00000011_1.inclbdshcx.root", "root://eoslhcb.cern.ch//eos/lhcb/user/r/relhage/test/rds/Ben/ap_post_process/output/mergedpidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef.root", "root://eoslhcb.cern.ch//eos/lhcb/user/r/relhage/test/rds/Ben/ap_post_process/output/rds_filtered_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef.root", "23903003")...
+Filtering for B_Y_SEP < -4.5
+Filtering for BDT_Iso > 0.03458
+                         : Booking "BDT method" of type "BDT" from TMVA/TMVAClassification_test_BDT_prova1bis_plusBDTBs_KEY.weights.xml.
+                         : Reading weight file: TMVA/TMVAClassification_test_BDT_prova1bis_plusBDTBs_KEY.weights.xml
+<HEADER> DataSetInfo              : [Default] : Added class "Signal"
+<HEADER> DataSetInfo              : [Default] : Added class "Background"
+                         : Booked classifier "BDT" of type: "BDT"
+                         : Booking "Fisher method" of type "Fisher" from TMVA/TMVAClassification_nc_020_mult0_Fisher.weights.xml.
+                         : Reading weight file: TMVA/TMVAClassification_nc_020_mult0_Fisher.weights.xml
+<HEADER> DataSetInfo              : [Default] : Added class "Signal"
+<HEADER> DataSetInfo              : [Default] : Added class "Background"
+                         : Booked classifier "Fisher" of type: "Fisher"
+                         : Booking "BDT method" of type "BDT" from TMVA/TMVAClassification_test_BDT_020_deltaMs_noMult.weights.xml.
+                         : Reading weight file: TMVA/TMVAClassification_test_BDT_020_deltaMs_noMult.weights.xml
+<HEADER> DataSetInfo              : [Default] : Added class "Signal"
+<HEADER> DataSetInfo              : [Default] : Added class "Background"
+                         : Booked classifier "BDT" of type: "BDT"
+                         : Booking "BDT method" of type "BDT" from /afs/cern.ch/work/r/relhage/public/BDT/dataset/weights/TMVAClassification_Ds_BDT.weights.xml.
+                         : Reading weight file: /afs/cern.ch/work/r/relhage/public/BDT/dataset/weights/TMVAClassification_Ds_BDT.weights.xml
+                         : Dataset[Default] : ERROR in <ReadVariablesFromXML>
+                         : The definition (or the order) of the variables found in the input file is
+                         : not the same as the one declared in the Reader (which is necessary for the
+                         : correct working of the method):
+                         :    var #11 declared in Reader: log(p1_fromXc_TRACK_GhostProbability)
+                         :    var #11 declared in file  : log(p1_fromXc_TRACK_GhostProb)
+<FATAL>                          : The expression declared to the Reader needs to be checked (name or order are wrong)
+***> abort program execution

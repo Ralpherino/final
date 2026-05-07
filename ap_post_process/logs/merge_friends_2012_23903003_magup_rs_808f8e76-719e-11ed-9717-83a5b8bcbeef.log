@@ -1,0 +1,17 @@
+--- Logging error ---
+Traceback (most recent call last):
+  File "/cvmfs/lhcbdev.cern.ch/conda/envs/default/2023-04-26_20-20/linux-64/lib/python3.10/logging/__init__.py", line 1100, in emit
+    msg = self.format(record)
+  File "/cvmfs/lhcbdev.cern.ch/conda/envs/default/2023-04-26_20-20/linux-64/lib/python3.10/logging/__init__.py", line 943, in format
+    return fmt.format(record)
+  File "/cvmfs/lhcbdev.cern.ch/conda/envs/default/2023-04-26_20-20/linux-64/lib/python3.10/logging/__init__.py", line 678, in format
+    record.message = record.getMessage()
+  File "/cvmfs/lhcbdev.cern.ch/conda/envs/default/2023-04-26_20-20/linux-64/lib/python3.10/logging/__init__.py", line 368, in getMessage
+    msg = msg % self.args
+TypeError: not all arguments converted during string formatting
+Call stack:
+  File "/afs/cern.ch/work/r/relhage/public/final/ap_post_process/workflow/scripts/merge_friends.py", line 25, in <module>
+    log.warning("Total number of candidates: ", rdf.Count().GetValue())
+Message: 'Total number of candidates: '
+Arguments: (228217,)
+['workflow/scripts/merge_friends.py', 'root://eoslhcb.cern.ch//eos/lhcb/user/r/relhage/test/rds/Ben/ap_post_process/output/mergedpidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p1_fromXc_PIDK.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p1_fromXc_PIDp.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p2_fromXc_PIDK.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p2_fromXc_PIDp.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p3_fromXc_PIDK.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p3_fromXc_PIDp.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p1_fromY_pi_PIDK.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p1_fromY_K_PIDK.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p2_fromY_pi_PIDK.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p2_fromY_K_PIDK.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p3_fromY_pi_PIDK.root', './eos/lhcb/wg/semileptonic/RDsHad/AP/final/ap_post_process/cache/pidgen_2012_23903003_magup_rs_808f8e76-719e-11ed-9717-83a5b8bcbeef_p3_fromY_K_PIDK.root']
