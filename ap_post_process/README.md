@@ -23,9 +23,9 @@ Based on the analysis production, this workflow
 - adds corrected kinematic quantities with PIDGen, using `workflow/scripts/pidgen2_rds_hadronic.py`
 - creates extra variables needed for the analysis, applies the BDTs Bs, Ds and 3pi, BDT_Iso and filters the data, using `workflow/scripts/RDsProcess.C`
   - the weight files for the BDTs are:
-    - `TMVA/TMVAClassification_BDT_3pi_new_PID.weights.xml`
-    - `TMVA/TMVAClassification_BDT_Ds_new_PID.weights.xml`
-    - `TMVA/TMVAClassification_BDT_Bs_new_PID.weights.xml`
+    - `TMVA/TMVAClassification_3pi_BDT.weights.xml`
+    - `TMVA/TMVAClassification_Ds_BDT.weights.xml`
+    - `TMVA/TMVAClassification_Bs_BDT.weights.xml`
   - for the BDT_Iso the weight file are `TMVA/TMVAClassification_nc_020_[...].xml`
 - apply code to categorise the candidates using the logic implemented in `categories4.py`, using the `add_categorization.py` script.
 
